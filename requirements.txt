@@ -6,4 +6,4 @@ pillow
 tensorflow-serving-api
 matplotlib
 numpy
-"fastapi[standard]"
+fastapi[standard]
