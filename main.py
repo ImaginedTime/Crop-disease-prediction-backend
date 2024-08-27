@@ -8,14 +8,6 @@ import io
 
 app = FastAPI()
 
-ground_nut_model = tf.keras.models.load_model('./models/ground_nut_2.h5')
-wheat_model = tf.keras.models.load_model('./models/wheat_2.h5')
-rice_model = tf.keras.models.load_model('./models/rice_2.h5')
-corn_model = tf.keras.models.load_model('./models/corn_2.h5')
-potato_model = tf.keras.models.load_model('./models/potato_2.h5')
-sugarcane_model = tf.keras.models.load_model('./models/sugarcane_2.h5')
-tea_model = tf.keras.models.load_model('./models/tea_2.h5')
-
 
 ground_nut_class_names = ['GROUNDNUT  LEAF SPOT (EARLY AND LATE)', 'GROUNDNUT  ROSETTE', 'GROUNDNUT  RUST', 'GROUNDNUT ALTERNARIA LEAF SPOT', 'GROUNDNUT HEALTHY']
 wheat_class_names = ['WHEAT BROWN RUST', 'WHEAT HEALTHY', 'WHEAT YELLOW RUST']
@@ -28,21 +20,28 @@ tea_class_names = ['TEA ALGAL LEAF', 'TEA ANTRACNOSE', 'TEA HEALTHY', 'TEA LEAF 
 
 crops = ['groundnut', 'wheat', 'rice', 'corn', 'potato', 'sugarcane', 'tea']
 
-# function that return the model and class names based on the crop type
+# function that returns the model and class names based on the crop type
 def get_model_and_class_names(crop_type):
     if crop_type == 'groundnut':
+        ground_nut_model = tf.keras.models.load_model('./models/ground_nut_2.h5')
         return ground_nut_model, ground_nut_class_names
     elif crop_type == 'wheat':
+        wheat_model = tf.keras.models.load_model('./models/wheat_2.h5')
         return wheat_model, wheat_class_names
     elif crop_type == 'rice':
+        rice_model = tf.keras.models.load_model('./models/rice_2.h5')
         return rice_model, rice_class_names
     elif crop_type == 'corn':
+        corn_model = tf.keras.models.load_model('./models/corn_2.h5')
         return corn_model, corn_class_names
     elif crop_type == 'potato':
+        potato_model = tf.keras.models.load_model('./models/potato_2.h5')
         return potato_model, potato_class_names
     elif crop_type == 'sugarcane':
+        sugarcane_model = tf.keras.models.load_model('./models/sugarcane_2.h5')
         return sugarcane_model, sugarcane_class_names
     elif crop_type == 'tea':
+        tea_model = tf.keras.models.load_model('./models/tea_2.h5')
         return tea_model, tea_class_names
 
 # function that converts the image to the required format
