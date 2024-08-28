@@ -8,9 +8,11 @@ import io
 
 app = FastAPI()
 
-# Soybean ['SOYABEAN BACTERIAL LEAF BLIGHT', 'SOYABEAN DRY LEAF', 'SOYABEAN HEALTHY', 'SOYABEAN SEPTORIA BROWN SPOT', 'SOYABEAN VEIN NECROSIS'] [0.96]
+# list of crops
+crops = ['groundnut', 'wheat', 'rice', 'corn', 'potato', 'sugarcane', 'tea', 'soyabean', 'cotton', 'tomato']
 
 
+# class names for each crop
 ground_nut_class_names = ['GROUNDNUT  LEAF SPOT (EARLY AND LATE)', 'GROUNDNUT  ROSETTE', 'GROUNDNUT  RUST', 'GROUNDNUT ALTERNARIA LEAF SPOT', 'GROUNDNUT HEALTHY']
 wheat_class_names = ['WHEAT BROWN RUST', 'WHEAT HEALTHY', 'WHEAT YELLOW RUST']
 rice_class_names = ['RICE BACTERIAL BLIGHT', 'RICE BLAST', 'RICE HEALTHY', 'RICE NECK BLAST']
@@ -19,9 +21,9 @@ potato_class_names = ['POTATO EARLY BLIGHT', 'POTATO HEALTHY', 'POTATO LATE BLIG
 sugarcane_class_names = ['SUGARCANE BACTERIAL BLIGHT', 'SUGARCANE HEALTHY', 'SUGARCANE RED ROT', 'SUGARCANE YELLOW RUST']
 tea_class_names = ['TEA ALGAL LEAF', 'TEA ANTRACNOSE', 'TEA HEALTHY', 'TEA LEAF BLIGHT', 'TEA RED LEAF SPOT', 'TEA RED SCAB']
 soyabean_class_names = ['SOYABEAN BACTERIAL LEAF BLIGHT', 'SOYABEAN DRY LEAF', 'SOYABEAN HEALTHY', 'SOYABEAN SEPTORIA BROWN SPOT', 'SOYABEAN VEIN NECROSIS']
+cotton_class_names = ['Aphids', 'Army worm', 'Bacterial Blight', 'Healthy', 'Powdery Mildew', 'Target spot']
+tomato_class_names = ['TOMATO BACTERIAL SPOT', 'TOMATO EARLY BLIGHT', 'TOMATO HEALTHY', 'TOMATO LATE BLIGHT', 'TOMATO LEAF MOLD', 'TOMATO MOSAIC VIRUS', 'TOMATO SEPTORIA LEAF SPOT', 'TOMATO TARGET SPOTS', 'TOMATO YELLOW LEAF CURL VIRUS']
 
-
-crops = ['groundnut', 'wheat', 'rice', 'corn', 'potato', 'sugarcane', 'tea', 'soyabean']
 
 # function that returns the model and class names based on the crop type
 def get_model_and_class_names(crop_type):
@@ -49,6 +51,12 @@ def get_model_and_class_names(crop_type):
     elif crop_type == 'soyabean':
         soyabean_model = tf.keras.models.load_model('./models/soyabean_2.h5')
         return soyabean_model, soyabean_class_names
+    elif crop_type == 'cotton':
+        cotton_model = tf.keras.models.load_model('./models/cotton_2.h5')
+        return cotton_model, cotton_class_names
+    elif crop_type == 'tomato':
+        tomato_model = tf.keras.models.load_model('./models/tomato_2.h5')
+        return tomato_model, tomato_class_names
 
 # function that converts the image to the required format
 def convert_jpg_to_jpeg(image: UploadFile):
