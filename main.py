@@ -1,12 +1,26 @@
 import tensorflow as tf
 
-from fastapi import FastAPI, UploadFile, File, Request
+from fastapi import FastAPI, UploadFile, File, Form
+# cors
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from PIL import Image
 import numpy as np
 import io
 
+
 app = FastAPI()
+
+# cors
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # list of crops
 crops = ['groundnut', 'wheat', 'rice', 'corn', 'potato', 'sugarcane', 'tea', 'soyabean', 'cotton', 'tomato']
@@ -69,10 +83,14 @@ async def root():
     return {"message": "Welcome to the Crop Disease Detection API"}
 
 
-@app.post('/predict')
-async def predict(crop_type = "groundnut", image: UploadFile = File(...)):
+
+@app.post('/predict/')
+async def predict(crop_type: str =  Form(...), image: UploadFile = File(...)):
+
+    print(crop_type)
+
     if crop_type not in crops:
-        return {"error": "Invalid crop type"}
+        return {"error": f"Invalid crop type{crop_type}"}
 
     try:
         image = convert_jpg_to_jpeg(image)
