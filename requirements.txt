@@ -7,3 +7,5 @@ tensorflow-serving-api
 matplotlib
 numpy
 fastapi[standard]
+gspread
+oauth2client
