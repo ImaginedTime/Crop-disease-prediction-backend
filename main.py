@@ -1,7 +1,5 @@
 import tensorflow as tf
 
-from pydantic import BaseModel
-
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -92,7 +90,6 @@ def convert_jpg_to_jpeg(image: UploadFile):
     except Exception as e:
         raise ValueError(f"Error converting image: {e}")
 
-
 def authenticate_google_sheet(sheet_id):
     creds = Credentials.from_service_account_file('sheet-creds.json', scopes=SCOPE)
     client = gspread.authorize(creds)
@@ -105,7 +102,11 @@ def get_sheet_content(sheet, class_name, lang_code, is_disease=True):
     sheet_name = f"{lang_code}-diseases" if is_disease else f"{lang_code}-healthy"
     worksheet = sheet.worksheet(sheet_name)
 
-    data = worksheet.get_all_records()
+    print(f"Sheet name: {sheet_name} - is a disease: {is_disease}")
+
+    expected_headers = ["Crop Name", "Disease Name", "Disease Name Lang", "Summary", "How to Identify", "How to Prevent", "How to Treat"] if is_disease else ["Crop Name", "Summary", "How to Identify", "How to Maintain", "How to Treat"]
+
+    data = worksheet.get_all_records(expected_headers=expected_headers)
 
     for row in data:
         if is_disease and row["Disease Name"].strip().lower() in class_name.lower():
@@ -158,11 +159,13 @@ async def predict(crop_type: str = Form(...), lang: str = Form(...), image: Uplo
         prediction = model.predict(image)
         predicted_class = class_names[np.argmax(prediction)]
 
+        print(predicted_class, float(np.max(prediction)))
+
         sheet = authenticate_google_sheet(sheet_id)
 
         crop_info = get_crop_info(predicted_class, crop_type, lang, sheet)
 
-        return {"class": predicted_class, "confidence": float(np.max(prediction))}
+        return {"class": predicted_class, "confidence": float(np.max(prediction)), "info": crop_info}
 
     except Exception as e:
         return {"error": str(e)}
