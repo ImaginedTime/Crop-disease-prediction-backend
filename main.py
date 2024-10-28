@@ -10,6 +10,9 @@ from PIL import Image
 import numpy as np
 import io
 
+# garbage collector to free up memory by deleting the loaded model from memory
+import gc
+
 
 app = FastAPI()
 
@@ -158,14 +161,17 @@ async def predict(crop_type: str = Form(...), lang: str = Form(...), image: Uplo
 
         prediction = model.predict(image)
         predicted_class = class_names[np.argmax(prediction)]
+        confidence = float(np.max(prediction))
 
-        print(predicted_class, float(np.max(prediction)))
+        del model
+        gc.collect()
+
+        print(predicted_class, confidence)
 
         sheet = authenticate_google_sheet(sheet_id)
-
         crop_info = get_crop_info(predicted_class, crop_type, lang, sheet)
 
-        return {"class": predicted_class, "confidence": float(np.max(prediction)), "info": crop_info}
+        return {"class": predicted_class, "confidence": confidence, "info": crop_info}
 
     except Exception as e:
         return {"error": str(e)}
