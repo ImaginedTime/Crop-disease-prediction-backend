@@ -14,7 +14,6 @@ numpy = "*"
 fastapi = {extras = ["standard"], version = "*"}
 gspread = "*"
 oauth2client = "*"
-pipenv = "*"
 
 [dev-packages]
 
