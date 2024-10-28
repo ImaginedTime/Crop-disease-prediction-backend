@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+tensorflow = "==2.15.0"
+uvicorn = "*"
+python-multipart = "*"
+pillow = "*"
+tensorflow-serving-api = "*"
+matplotlib = "*"
+numpy = "*"
+fastapi = {extras = ["standard"], version = "*"}
+gspread = "*"
+oauth2client = "*"
+pipenv = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"
