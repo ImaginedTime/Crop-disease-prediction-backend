@@ -3,8 +3,8 @@ import tensorflow as tf
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 
-import gspread
-from google.oauth2.service_account import Credentials
+import requests
+import csv
 
 from PIL import Image
 import numpy as np
@@ -29,16 +29,18 @@ app.add_middleware(
 crops = ['groundnut', 'wheat', 'rice', 'corn', 'potato', 'sugarcane', 'tea', 'soyabean', 'cotton', 'tomato']
 langs = ['en', 'hi', 'tm', 'tl', 'kn', 'ml', 'gj', 'bg', 'od', 'pn', 'ma']
 
-# sheet with content
+# sheet with content (public - anyone with the link can view)
 sheet_id = "1Gf4fp710E9RN6PA8c0II2kn90d-_qZ_Q21GDYqzwKts"
-SCOPE = ['https://www.googleapis.com/auth/spreadsheets']
 
 
 # class names for each crop
 ground_nut_class_names = ['GROUNDNUT LEAF SPOT (EARLY AND LATE)', 'GROUNDNUT ROSETTE', 'GROUNDNUT RUST', 'GROUNDNUT ALTERNARIA LEAF SPOT', 'GROUNDNUT HEALTHY']
 wheat_class_names = ['WHEAT BROWN RUST', 'WHEAT HEALTHY', 'WHEAT YELLOW RUST']
 rice_class_names = ['RICE BACTERIAL BLIGHT', 'RICE BLAST', 'RICE HEALTHY', 'RICE NECK BLAST']
+
 corn_class_names = ['CORN COMMON RUST', 'CORN GREY LEAF SPOT', 'CORN HEALTHY', 'CORN NORTHERN LEAF BLIGHT']
+# corn_class_names = ['CORN COMMON RUST', 'CORN HEALTHY', 'CORN NORTHERN LEAF BLIGHT']
+
 potato_class_names = ['POTATO EARLY BLIGHT', 'POTATO HEALTHY', 'POTATO LATE BLIGHT']
 sugarcane_class_names = ['SUGARCANE BACTERIAL BLIGHT', 'SUGARCANE HEALTHY', 'SUGARCANE RED ROT', 'SUGARCANE YELLOW RUST']
 tea_class_names = ['TEA ALGAL LEAF', 'TEA ANTRACNOSE', 'TEA HEALTHY', 'TEA LEAF BLIGHT', 'TEA RED LEAF SPOT', 'TEA RED SCAB']
@@ -93,35 +95,34 @@ def convert_jpg_to_jpeg(image: UploadFile):
     except Exception as e:
         raise ValueError(f"Error converting image: {e}")
 
-def authenticate_google_sheet(sheet_id):
-    creds = Credentials.from_service_account_file('sheet-creds.json', scopes=SCOPE)
-    client = gspread.authorize(creds)
-    
-    # Open the Google Sheet by its ID
-    sheet = client.open_by_key(sheet_id)
-    return sheet
+def fetch_sheet_as_dicts(sheet_id, sheet_name):
+    """Fetch a public Google Sheet tab as a list of dicts via CSV export."""
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}"
+    response = requests.get(url)
+    response.raise_for_status()
 
-def get_sheet_content(sheet, class_name, lang_code, is_disease=True):
+    # Parse CSV into list of dicts, filtering out empty-string keys from trailing commas
+    reader = csv.DictReader(io.StringIO(response.text))
+    return [{k: v for k, v in row.items() if k} for row in reader]
+
+def get_sheet_content(sheet_id, class_name, lang_code, is_disease=True):
     sheet_name = f"{lang_code}-diseases" if is_disease else f"{lang_code}-healthy"
-    worksheet = sheet.worksheet(sheet_name)
 
     print(f"Sheet name: {sheet_name} - is a disease: {is_disease}")
 
-    expected_headers = ["Crop Name", "Disease Name", "Disease Name Lang", "Summary", "How to Identify", "How to Prevent", "How to Treat"] if is_disease else ["Crop Name", "Summary", "How to Identify", "How to Maintain", "How to Treat"]
-
-    data = worksheet.get_all_records(expected_headers=expected_headers)
+    data = fetch_sheet_as_dicts(sheet_id, sheet_name)
 
     for row in data:
-        if is_disease and row["Disease Name"].strip().lower() in class_name.lower():
+        if is_disease and row.get("Disease Name", "").strip().lower() in class_name.lower():
             return row
-        if row["Crop Name"].strip().lower() in class_name.lower():
+        if row.get("Crop Name", "").strip().lower() in class_name.lower():
             return row
     return None
 
-def get_crop_info(prediction, crop_name, lang_code, sheet):
+def get_crop_info(prediction, crop_name, lang_code, sheet_id):
     is_healthy = "HEALTHY" in prediction.upper()
     
-    content = get_sheet_content(sheet, prediction, lang_code, is_disease = not is_healthy)
+    content = get_sheet_content(sheet_id, prediction, lang_code, is_disease = not is_healthy)
     
     if content:
         return content
@@ -168,10 +169,13 @@ async def predict(crop_type: str = Form(...), lang: str = Form(...), image: Uplo
 
         print(predicted_class, confidence)
 
-        sheet = authenticate_google_sheet(sheet_id)
-        crop_info = get_crop_info(predicted_class, crop_type, lang, sheet)
+        crop_info = get_crop_info(predicted_class, crop_type, lang, sheet_id)
 
-        return {"class": predicted_class, "confidence": confidence, "info": crop_info}
+        return {
+            "class": predicted_class, 
+            "confidence": confidence, 
+            "info": crop_info
+        }
 
     except Exception as e:
         return {"error": str(e)}
