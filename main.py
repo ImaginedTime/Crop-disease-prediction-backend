@@ -105,29 +105,46 @@ def fetch_sheet_as_dicts(sheet_id, sheet_name):
     reader = csv.DictReader(io.StringIO(response.text))
     return [{k: v for k, v in row.items() if k} for row in reader]
 
-def get_sheet_content(sheet_id, class_name, lang_code, is_disease=True):
+def normalize(s: str) -> str:
+    return s.strip().lower()
+
+def get_sheet_content(sheet_id, crop_name, class_name, lang_code, is_disease=True):
     sheet_name = f"{lang_code}-diseases" if is_disease else f"{lang_code}-healthy"
-
-    print(f"Sheet name: {sheet_name} - is a disease: {is_disease}")
-
     data = fetch_sheet_as_dicts(sheet_id, sheet_name)
 
+    crop_name = normalize(crop_name)
+    class_name = normalize(class_name)
+
     for row in data:
-        if is_disease and row.get("Disease Name", "").strip().lower() in class_name.lower():
+        row_crop = normalize(row.get("Crop Name", ""))
+        row_disease = normalize(row.get("Disease Name", ""))
+
+        if row_crop != crop_name:
+            continue
+
+        if is_disease:
+            if row_disease == class_name:
+                return row
+        else:
+            # for healthy sheets, match crop only
             return row
-        if row.get("Crop Name", "").strip().lower() in class_name.lower():
-            return row
+
     return None
+
 
 def get_crop_info(prediction, crop_name, lang_code, sheet_id):
     is_healthy = "HEALTHY" in prediction.upper()
-    
-    content = get_sheet_content(sheet_id, prediction, lang_code, is_disease = not is_healthy)
-    
+    content = get_sheet_content(
+        sheet_id=sheet_id,
+        crop_name=crop_name,
+        class_name=prediction,
+        lang_code=lang_code,
+        is_disease=not is_healthy
+    )
+
     if content:
         return content
-    else:
-        return {"error": "No content found for the given crop and language"}
+    return {"error": "No content found for the given crop and language"}
 
 @app.get('/')
 async def root():
