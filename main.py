@@ -157,10 +157,6 @@ async def predict(crop_type: str = Form(...), lang: str = Form(...), image: Uplo
     # crop_type = payload.crop_type
     # lang = payload.lang
     # image = payload.image.file
-async def predict(crop_type: str = Form(...), lang: str = Form(...), image: UploadFile = File(...)):
-    # crop_type = payload.crop_type
-    # lang = payload.lang
-    # image = payload.image.file
 
     print(crop_type)
     print(lang)
@@ -197,8 +193,7 @@ async def predict(crop_type: str = Form(...), lang: str = Form(...), image: Uplo
 
         print(predicted_class, confidence)
 
-        sheet = authenticate_google_sheet(sheet_id)
-        crop_info = get_crop_info(predicted_class, crop_type, lang, sheet)
+        crop_info = get_crop_info(predicted_class, crop_type, lang, sheet_id)
 
         return {
             "class": predicted_class, 
